@@ -1,0 +1,171 @@
+{
+ "name": "S Meridiani Sinus Planium terrain classes (sites, 250 m)",
+ "file": "terrain_S_Meridiani_Sinus_Planium_sites.img",
+ "ppd": 233.0168888888889,
+ "lat_max": -1.4438438415527344,
+ "lon_min": 353.96352767944336,
+ "width": 236,
+ "height": 235,
+ "type": "int16be",
+ "global": false,
+ "nodata": 0,
+ "categorical": true,
+ "level": 2,
+ "classes": {
+  "1": "Aeolian Straight",
+  "2": "Rough Terrain",
+  "3": "Cliff",
+  "4": "Aeolian Curved",
+  "5": "Textured Terrain",
+  "6": "Smooth Terrain",
+  "7": "Mass Wasting",
+  "8": "Ridge",
+  "9": "Slope Streaks",
+  "10": "Mounds",
+  "11": "Channel",
+  "12": "Gullies",
+  "13": "Crater Field",
+  "14": "Crater",
+  "15": "Mixed Terrain",
+  "16": "uncertain"
+ },
+ "codes": {
+  "1": "ael",
+  "2": "rou",
+  "3": "cli",
+  "4": "aec",
+  "5": "tex",
+  "6": "smo",
+  "7": "fss",
+  "8": "rid",
+  "9": "fse",
+  "10": "sfe",
+  "11": "fsf",
+  "12": "fsg",
+  "13": "sfx",
+  "14": "cra",
+  "15": "mix"
+ },
+ "groups": {
+  "1": "aeolian bedforms",
+  "2": "basic terrain",
+  "3": "topographic landforms",
+  "4": "aeolian bedforms",
+  "5": "basic terrain",
+  "6": "basic terrain",
+  "7": "slope features",
+  "8": "topographic landforms",
+  "9": "slope features",
+  "10": "topographic landforms",
+  "11": "topographic landforms",
+  "12": "slope features",
+  "13": "impact landforms",
+  "14": "impact landforms",
+  "15": "basic terrain"
+ },
+ "colors": {
+  "1": "#f2a541",
+  "2": "#7f8c8d",
+  "3": "#8b1e3f",
+  "4": "#f7c873",
+  "5": "#d5dbdb",
+  "6": "#abebc6",
+  "7": "#7d6608",
+  "8": "#c0392b",
+  "9": "#48c9b0",
+  "10": "#a569bd",
+  "11": "#2e86de",
+  "12": "#16a085",
+  "13": "#f0b27a",
+  "14": "#e67e22",
+  "15": "#bfc9ca",
+  "16": "#808080"
+ },
+ "planner": {
+  "1": {
+   "rock": 0.0,
+   "soft": 1.0
+  },
+  "2": {
+   "rock": 1.0,
+   "soft": 0.0
+  },
+  "3": {
+   "rock": 1.0,
+   "soft": 0.0
+  },
+  "4": {
+   "rock": 0.0,
+   "soft": 1.0
+  },
+  "5": {
+   "rock": 0.3,
+   "soft": 0.0
+  },
+  "6": {
+   "rock": 0.0,
+   "soft": 0.0
+  },
+  "7": {
+   "rock": 0.8,
+   "soft": 0.3
+  },
+  "8": {
+   "rock": 0.6,
+   "soft": 0.0
+  },
+  "9": {
+   "rock": 0.1,
+   "soft": 0.5
+  },
+  "10": {
+   "rock": 0.3,
+   "soft": 0.0
+  },
+  "11": {
+   "rock": 0.1,
+   "soft": 0.3
+  },
+  "12": {
+   "rock": 0.7,
+   "soft": 0.2
+  },
+  "13": {
+   "rock": 0.4,
+   "soft": 0.0
+  },
+  "14": {
+   "rock": 0.5,
+   "soft": 0.0
+  },
+  "15": {
+   "rock": 0.2,
+   "soft": 0.1
+  }
+ },
+ "imagery": "S_Meridiani_Sinus_Planium_CTX_BlockAdj_dd z12 (~10 m/px), window 1200 m",
+ "model": "DINOv2 vitb14 (facebookresearch/dinov2:7764ea0f912e53c92e82eb78a2a1631e92725fc8) + linear probe",
+ "test_accuracy": 0.8897,
+ "uncertain_below_p": 0.4,
+ "mean_confidence": 0.886,
+ "class_fractions": {
+  "ael": 0.012,
+  "rou": 0.001,
+  "cli": 0.006,
+  "aec": 0.005,
+  "tex": 0.03,
+  "smo": 0.807,
+  "fss": 0.002,
+  "rid": 0.016,
+  "fse": 0.001,
+  "sfe": 0.0,
+  "fsf": 0.005,
+  "fsg": 0.0,
+  "sfx": 0.016,
+  "cra": 0.036,
+  "mix": 0.036,
+  "uncertain": 0.027
+ },
+ "tier": "sites",
+ "citation": "Classes: DoMars16k (Wilhelm et al. 2020, CC BY 4.0); model: DINOv2 (Oquab et al. 2023, Apache-2.0); imagery: MRO CTX (Malin et al. 2007) via NASA Solar System Treks; AutoNav-0"
+}

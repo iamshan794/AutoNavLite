@@ -1,0 +1,27 @@
+# AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author.
+[Unit]
+Description=AutoNav-0 headless Mars map & route-planning service (autonav0d)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust paths after `cmake --install build --prefix /opt/autonav0` (or point at a source checkout).
+WorkingDirectory=/opt/autonav0
+ExecStart=/opt/autonav0/bin/autonav0d --host 127.0.0.1 --port 8080 --data /opt/autonav0/data --web /opt/autonav0/share/autonav0/web
+# Unix-socket alternative for local IPC clients:
+# ExecStart=/opt/autonav0/bin/autonav0d --unix /run/autonav0/autonav0.sock --data /opt/autonav0/data
+RuntimeDirectory=autonav0
+Restart=on-failure
+RestartSec=2
+DynamicUser=yes
+ReadWritePaths=/opt/autonav0/data/tiles
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+MemoryMax=512M
+CPUQuota=200%
+
+[Install]
+WantedBy=multi-user.target

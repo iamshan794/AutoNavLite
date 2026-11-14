@@ -1,0 +1,13 @@
+# AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author.
+build/
+data/*
+# Ship the small precomputed terrain-class layers and classifier heads; everything else in data/ is
+# fetched (scripts/fetch_data.py) or regenerated at start (relief / comms caches).
+!data/terrain/
+data/terrain/*
+!data/terrain/terrain_*.img
+!data/terrain/terrain_*.json
+!data/terrain/terrain_*.tif
+!data/terrain/models/
+*.part
+__pycache__/

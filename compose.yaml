@@ -1,0 +1,89 @@
+# AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author.
+# AutoNav-0 stack.
+#   docker compose --profile setup run --rm fetch-data   # once: small offline data pack -> ./data
+#   docker compose --profile terrain run --rm terrain-map # optional: regenerate terrain-class layers
+#                                                         # (GPU recommended; results ship in data/terrain)
+#   docker compose up -d                                 # 2D/3D map service only  -> http://localhost:8080
+#   docker compose --profile rover up -d                 # + ROS 2 rover replay, RTAB-Map VSLAM
+# Rerun (3D debug viewer) is a dev-only feature and is NOT started by default:
+#   AUTONAV_RERUN=true AUTONAV_RERUN_URL='http://{host}:9090/?url=rerun%2Bhttp%3A%2F%2F{host}%3A9876%2Fproxy' \
+#     docker compose --profile rover --profile rerun up -d   (or: scripts/stack.sh up --rover --rerun)
+# Ports/user are overridable: AUTONAV_PORT, RERUN_WEB_PORT, RERUN_GRPC_PORT, UID, GID, M20_SOLS.
+# GPU: scripts/stack.sh adds compose.gpu.yaml automatically when an NVIDIA GPU is usable; without it the
+# rover's perception falls back to CPU backends (SGBM, XFeat/ORB on CPU, LK flow).
+name: autonav0
+
+x-user: &user "${UID:-1000}:${GID:-1000}"
+
+services:
+  autonav0d:
+    build: { context: ., target: runtime }
+    image: autonav0d:latest
+    user: *user
+    ports: ["${AUTONAV_PORT:-8080}:8080"]
+    # ./web is mounted read-only so UI edits apply without rebuilding (the image also contains it).
+    volumes: ["./data:/data", "./web:/opt/autonav0/web:ro"]
+    # Rerun link in the UI only when a viewer URL is given ({host} = the page's hostname).
+    command: ["--rerun-url", "${AUTONAV_RERUN_URL:-}"]
+    restart: unless-stopped
+
+  fetch-data:
+    profiles: ["setup"]
+    image: python:3.12-slim
+    user: *user
+    environment: { AUTONAV_DATA: /data }
+    volumes: ["./data:/data", "./scripts:/scripts:ro"]
+    command: ["python3", "/scripts/fetch_data.py"]
+
+  # Regenerates data/terrain/terrain_*.{json,img,tif} (DoMars16k landform classes from Trek CTX).
+  # Needs internet (Trek tiles, DINOv2 weights); runs once, outputs are small and served by autonav0d.
+  terrain-map:
+    profiles: ["terrain"]
+    image: autonav0-rover:latest
+    user: *user
+    environment: { HOME: /tmp, TORCH_HOME: /cache/torch, AUTONAV_DATA: /data,
+                   AUTONAV_DEVICE: "${AUTONAV_DEVICE:-auto}" }
+    volumes: ["./data:/data", "./scripts:/scripts:ro", "model-cache:/cache"]
+    entrypoint: ["/opt/perception-venv/bin/python", "/scripts/terrain_map.py", "--tile-cache", "/cache/tiles",
+                 "--skip-existing"]
+
+  rerun:  # dev-only debug viewer
+    profiles: ["rerun"]
+    image: autonav0-rover:latest
+    user: *user
+    entrypoint: ["/opt/rerun-venv/bin/rerun"]
+    command: ["--serve-web", "--bind", "0.0.0.0", "--port", "9876", "--web-viewer-port", "9090",
+              "--server-memory-limit", "${RERUN_SERVER_MEMORY:-512MiB}"]
+    mem_limit: 1536m
+    ports: ["${RERUN_WEB_PORT:-9090}:9090", "${RERUN_GRPC_PORT:-9876}:9876"]
+    restart: unless-stopped
+
+  rover:
+    profiles: ["rover"]
+    build:
+      context: ./ros
+      target: rover
+      args: { TORCH_INDEX: "${TORCH_INDEX:-https://download.pytorch.org/whl/cu128}" }
+    image: autonav0-rover:latest
+    user: *user
+    depends_on:
+      autonav0d: { condition: service_healthy }
+    environment:
+      HOME: /tmp
+      AUTONAV_URL: http://autonav0d:8080
+      RERUN_GRPC_URL: rerun+http://rerun:9876/proxy
+      M20_LOG_DIR: /data/m20log
+      M20_SOLS: "${M20_SOLS:-118:125}"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+      AUTONAV_DEVICE: "${AUTONAV_DEVICE:-auto}"          # auto | cuda | cpu
+      AUTONAV_STEREO: "${AUTONAV_STEREO:-auto}"          # auto | raft_stereo | sgbm
+      AUTONAV_VO_METHOD: "${AUTONAV_VO_METHOD:-features}" # features (XFeat/ORB) | flow (RAFT/LK)
+    volumes: ["./data/m20log:/data/m20log"]
+    command: ["ros2", "launch", "autonav_rover", "rover.launch.py", "frame_period_s:=${FRAME_PERIOD_S:-3.0}",
+              "rerun:=${AUTONAV_RERUN:-false}"]
+    mem_limit: 6g
+    shm_size: 1g
+    restart: unless-stopped
+
+volumes:
+  model-cache:

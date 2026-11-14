@@ -1,0 +1,14 @@
+# AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author.
+# GPU override for the rover's learned perception (RAFT-Stereo, XFeat, RAFT flow).
+# Used automatically by scripts/stack.sh when `nvidia-smi` works; manual use:
+#   docker compose -f compose.yaml -f compose.gpu.yaml --profile rover up -d
+#   docker compose -f compose.yaml -f compose.gpu.yaml --profile terrain run --rm terrain-map
+services:
+  rover:
+    gpus: all
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+  terrain-map:
+    gpus: all
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility

@@ -1,0 +1,90 @@
+/* AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author. */
+:root { --bg:#14100e; --panel:#1f1916; --fg:#eadfd6; --mut:#a8968a; --acc:#e0703a; --line:#3a2e28; }
+* { box-sizing: border-box; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+  font: 13px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { position:fixed; top:0; left:0; right:0; height:44px; display:flex; gap:8px; align-items:center;
+  padding:0 10px; background:var(--panel); border-bottom:1px solid var(--line); z-index:1000; }
+.brand { font-weight:700; color:var(--acc); white-space:nowrap; }
+.brand span { color:var(--mut); font-weight:400; font-size:11px; margin-left:4px; }
+header input, header select, aside input[type=search], aside select { background:#2a221e; color:var(--fg);
+  border:1px solid var(--line); border-radius:4px; padding:5px 7px; }
+#search { width:320px; }
+#search-results { position:absolute; top:40px; left:190px; width:320px; max-height:300px; overflow:auto;
+  background:var(--panel); border:1px solid var(--line); display:none; z-index:1100; }
+#search-results div { padding:5px 8px; cursor:pointer; }
+#search-results div:hover { background:#3a2e28; }
+#search-results small { color:var(--mut); }
+#marstime { margin-left:auto; color:var(--mut); font-size:12px; white-space:nowrap; }
+button { background:#2f2621; color:var(--fg); border:1px solid var(--line); border-radius:4px;
+  padding:5px 9px; cursor:pointer; }
+button:hover { border-color:var(--acc); }
+button.primary { background:var(--acc); color:#1a0f08; font-weight:600; border:0; width:100%; margin-top:6px; }
+button.armed { background:#5a3b22; border-color:var(--acc); }
+#netmode.on { color:#7ddc7d; } #netmode.off { color:#e6a04d; }
+aside { position:fixed; top:44px; bottom:24px; left:0; width:330px; overflow:auto; background:var(--panel);
+  border-right:1px solid var(--line); z-index:900; }
+.tabs { display:flex; position:sticky; top:0; background:var(--panel); z-index:2; border-bottom:1px solid var(--line); }
+.tabs button { flex:1; border:0; border-radius:0; background:transparent; padding:9px; }
+.tabs button.active { border-bottom:2px solid var(--acc); color:var(--acc); }
+.tab { display:none; padding:4px 12px 16px; } .tab.active { display:block; }
+h3 { font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--acc); margin:14px 0 6px; }
+h3 small { text-transform:none; color:var(--mut); letter-spacing:0; }
+label { display:block; margin:4px 0; } label.inline { display:inline-block; color:var(--mut); }
+.sub { margin-left:20px; font-size:12px; } .sub input[type=range] { width:130px; vertical-align:middle; }
+#basemap, #layer-filter, #route-profile { width:100%; }
+input[type=number] { width:56px; background:#2a221e; color:var(--fg); border:1px solid var(--line); border-radius:3px; }
+#layer-list { max-height:280px; overflow:auto; border:1px solid var(--line); border-radius:4px; margin-top:4px; }
+.layer { padding:4px 6px; border-bottom:1px solid #2a221e; display:flex; gap:6px; align-items:flex-start; }
+.layer:hover { background:#2a221e; } .layer .t { flex:1; } .layer small { color:var(--mut); display:block; }
+.layer button { padding:1px 6px; font-size:11px; }
+.cat { padding:3px 6px; background:#2a221e; color:var(--mut); font-size:11px; text-transform:uppercase; }
+#active-list .layer input[type=range] { width:80px; }
+.row { display:flex; gap:6px; margin:6px 0; } .row button { flex:1; }
+.hint { color:var(--mut); font-size:12px; margin:4px 0; }
+.warn { color:#e6a04d; }
+table.tel { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+table.tel td { padding:2px 4px; border-bottom:1px solid #2a221e; } table.tel td:last-child { text-align:right; color:#fff; }
+.err { color:#ff7b6b; margin-top:6px; }
+#chart { width:100%; height:140px; background:#191411; border:1px solid var(--line); margin-top:8px; }
+main#map { position:fixed; top:44px; bottom:24px; left:330px; right:0; background:#000; }
+footer { position:fixed; bottom:0; left:0; right:0; height:24px; background:var(--panel); border-top:1px solid var(--line);
+  display:flex; justify-content:space-between; padding:3px 10px; color:var(--mut); font-family:ui-monospace,monospace; font-size:12px; }
+.leaflet-container { background:#000; }
+.name-label { color:#ffe9c8; font-size:11px; text-shadow:0 0 3px #000, 0 0 2px #000; white-space:nowrap; }
+.leaflet-popup-content-wrapper, .leaflet-popup-tip { background:var(--panel); color:var(--fg); }
+.leaflet-control-attribution { background:rgba(20,16,14,.7)!important; color:var(--mut)!important; }
+.leaflet-control-attribution a { color:var(--acc)!important; }
+code { background:#2a221e; padding:0 3px; border-radius:3px; }
+.rcard { border:1px solid var(--line); border-radius:6px; padding:6px 8px; margin:6px 0; cursor:pointer; background:#241d19; }
+.rcard:hover { border-color:#6a5446; }
+.rcard.sel { border-color:var(--acc); background:#2f241d; box-shadow:0 0 0 1px var(--acc) inset; }
+.rhead { display:flex; align-items:center; gap:6px; }
+.swatch { width:14px; height:5px; border-radius:2px; display:inline-block; }
+.rmain { color:#fff; margin-top:2px; } .rsub { color:var(--mut); font-size:11px; }
+.badge { display:inline-block; font-size:10px; background:#1e3a2a; color:#8fe3a8; border-radius:8px; padding:1px 6px; margin:3px 3px 0 0; }
+td small { color:var(--mut); }
+#view3d { position:fixed; top:44px; bottom:24px; left:330px; right:0; background:#1a0f0a; z-index:800; }
+#view3d canvas { width:100%; height:100%; display:block; }
+#v3-hud { position:absolute; top:8px; left:8px; right:8px; background:rgba(31,25,22,.85); border:1px solid var(--line);
+  border-radius:6px; padding:6px 10px; font-size:12px; }
+#v3-hud input[type=range] { width:90px; vertical-align:middle; }
+#v3-hud select { background:#2a221e; color:var(--fg); border:1px solid var(--line); }
+#v3-status { color:var(--mut); margin-left:6px; }
+#btn3d.armed { background:var(--acc); color:#1a0f08; }
+/* responsive header: shrink search/clock before pushing buttons off-screen */
+#search { width:auto; flex:0 1 320px; min-width:110px; }
+#bookmarks { flex:0 1 220px; min-width:90px; }
+#marstime { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; text-align:right; }
+header button { flex:0 0 auto; }
+@media (max-width: 1000px) { .brand span { display:none; } }
+.hdr-link { color:var(--acc); text-decoration:none; border:1px solid var(--line); border-radius:4px; padding:5px 9px; flex:0 0 auto; }
+.hdr-link:hover { border-color:var(--acc); }
+.badge.hist { background:#3a3a3a; color:#fff; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11px; margin: 4px 0 6px; }
+.legend .lg-group { flex-basis: 100%; color: #9fb0c0; text-transform: capitalize; margin-top: 3px; }
+.legend .lg i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; border-radius: 2px; vertical-align: -1px; }
+#terrain-region { width: 100%; margin: 4px 0; }
+.legend[hidden], #terrain-sub[hidden] { display: none; }
+.warn { color: #ff6b5a; }

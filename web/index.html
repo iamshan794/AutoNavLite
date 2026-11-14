@@ -1,0 +1,136 @@
+<!doctype html>
+<!-- AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AutoNav-0 · Mars Map (2D)</title>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">AutoNav-0 <span>Mars · 2D low-power</span></div>
+  <input id="search" type="search" placeholder="Search features (e.g. Gale, Jezero, Olympus)…" autocomplete="off">
+  <div id="search-results"></div>
+  <select id="bookmarks"><option value="">Bookmarks / landing sites…</option></select>
+  <div id="marstime" title="Mars time at map centre (Mars24 algorithm)"></div>
+  <a id="rerun-link" class="hdr-link" target="_blank" rel="noopener" hidden title="Rerun viewer: Navcam stereo, point clouds, VSLAM">Rerun ↗</a>
+  <button id="btn3d" title="Toggle 3D terrain view of the current map extent">3D</button>
+  <button id="netmode" title="Toggle orbiter uplink (online tile fill)">…</button>
+</header>
+
+<aside id="panel">
+  <nav class="tabs">
+    <button data-tab="layers" class="active">Layers</button>
+    <button data-tab="tools">Tools</button>
+    <button data-tab="about">About</button>
+  </nav>
+
+  <section id="tab-layers" class="tab active">
+    <h3>Basemap</h3>
+    <select id="basemap"></select>
+    <h3>Terrain analysis <small>(autonav0d · MOLA DEM)</small></h3>
+    <label><input type="checkbox" id="ov-hillshade"> Sun illumination + shadows</label>
+    <div class="sub" id="sun-controls">
+      <label>Azimuth <input type="range" id="sun-az" min="0" max="359" value="315"><span id="sun-az-v"></span>°</label>
+      <label>Elevation <input type="range" id="sun-el" min="-10" max="90" value="30"><span id="sun-el-v"></span>°</label>
+      <button id="sun-now">Sync with current Sun Position</button>
+    </div>
+    <label><input type="checkbox" id="ov-slope"> Slope hazard (limit <span class="slopev">25</span>°)</label>
+    <label><input type="checkbox" id="ov-contours"> Contour lines</label>
+    <h3>Communications <small>(terrain masking · used by the planner)</small></h3>
+    <label><input type="checkbox" id="ov-comms" checked> Comm dead spots <small>(relay passes &lt; 10° blocked)</small></label>
+    <div class="sub legend" id="legend-comms"></div>
+    <h3>Terrain classes <small>(precomputed · used by the planner)</small></h3>
+    <label><input type="checkbox" id="ov-relief"> Relief landforms <small>(MOLA TPI, global)</small></label>
+    <div class="sub legend" id="legend-relief" hidden></div>
+    <label><input type="checkbox" id="ov-terrain"> Surface landforms <small>(CTX · DoMars16k model)</small></label>
+    <select id="terrain-region" class="sub"><option value="">Go to mapped region…</option></select>
+    <div class="sub" id="terrain-sub" hidden>
+      <div class="legend" id="legend-terrain"></div>
+      <div class="hint" id="terrain-note"></div>
+    </div>
+    <h3>Mission data</h3>
+    <label><input type="checkbox" id="ov-msl"> Curiosity (MSL) traverse</label>
+    <label><input type="checkbox" id="ov-m20"> Perseverance (M2020) traverse</label>
+    <label><input type="checkbox" id="ov-wp"> Rover waypoints (sol labels)</label>
+    <label><input type="checkbox" id="ov-names" checked> Feature names (IAU)</label>
+    <label><input type="checkbox" id="ov-rover" checked> Live rover (ROS 2 bridge)
+      <label class="inline"><input type="checkbox" id="rover-follow"> follow</label></label>
+    <div class="sub hint" id="rover-info">no rover connected</div>
+    <h3>NASA Trek layers <small id="layer-count"></small></h3>
+    <input id="layer-filter" type="search" placeholder="Filter layers (CTX, HiRISE, THEMIS…)">
+    <label class="inline"><input type="checkbox" id="layer-inview" checked> only in view</label>
+    <div id="layer-list"></div>
+    <h3>Active overlays</h3>
+    <div id="active-list"><em>none</em></div>
+  </section>
+
+  <section id="tab-tools" class="tab">
+    <h3>Route planner (A*)</h3>
+    <p class="hint">Click <b>Set start</b> / <b>Set goal</b>, then click the map.</p>
+    <div class="row">
+      <button id="pick-start">Set start</button>
+      <button id="pick-goal">Set goal</button>
+      <button id="route-clear">Clear</button>
+    </div>
+    <label>Primary profile
+      <select id="route-profile">
+        <option value="safe">Safe rover — slope + sand-trap penalties</option>
+        <option value="wear">Wheel saver — least wheel wear (may be longer)</option>
+        <option value="eva">Astronaut EVA — least walking time</option>
+        <option value="shortest">Shortest — ≤45° physical limit</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="route-compare" checked> Compare with the other profiles</label>
+    <label>Avoid comm dead spots <select id="comm-weight"><option value="0">off</option><option value="1" selected>normal</option><option value="3">strong</option></select></label>
+    <label>Alternative routes <select id="route-alts"><option>0</option><option selected>1</option><option>2</option><option>3</option></select></label>
+    <label>Max slope <input type="range" id="max-slope" min="5" max="45" value="25"> <span class="slopev">25</span>°</label>
+    <label>Odometry drift <input type="number" id="drift" value="2" min="0" max="20" step="0.5">% ·
+      re-localise at σ&gt;<input type="number" id="reloc" value="50" min="5" max="1000" step="5"> m</label>
+    <button id="route-go" class="primary">Plan &amp; compare routes</button>
+    <div id="route-cards"></div>
+    <div id="route-out"></div>
+
+    <h3>Elevation profile / measure</h3>
+    <p class="hint">Click <b>Draw</b>, click points on the map, double-click to finish.</p>
+    <div class="row"><button id="prof-draw">Draw</button><button id="prof-clear">Clear</button></div>
+    <div id="prof-out"></div>
+    <canvas id="chart" width="300" height="140"></canvas>
+  </section>
+
+  <section id="tab-about" class="tab">
+    <p><b>AutoNav-0</b> is an offline-first, open-source 2D Mars map and route planner. A headless
+      C++ service (<code>autonav0d</code>) serves cached NASA Trek tiles, MOLA elevation, risk-aware A*
+      routes and Mars24 solar geometry to this lightweight client.</p>
+    <p>Data: NASA Solar System Treks (JPL/Caltech), NASA PDS (MGS MOLA MEGDR), USGS/IAU Gazetteer of
+      Planetary Nomenclature, NASA/JPL MMGIS rover traverses, NASA GISS Mars24 algorithm.
+      See <code>CITATIONS.md</code>.</p>
+    <p class="warn">Route estimates use ~463 m MOLA data and are planning aids only — they cannot
+      see rocks, ventifacts or sand ripples below orbital resolution.</p>
+    <div id="health"></div>
+  </section>
+</aside>
+
+<main id="map"></main>
+<section id="view3d" hidden>
+  <div id="v3-hud">
+    <b>3D terrain</b> <span id="v3-status"></span><br>
+    <label class="inline">Vertical ×<input type="range" id="v3-exag" min="1" max="10" value="3"><span id="v3-exag-v">3</span></label>
+    <label class="inline">Mesh <select id="v3-res"><option>128</option><option selected>256</option><option>384</option><option>512</option></select></label>
+    <button id="v3-reload" title="Rebuild from the current 2D extent and layers">↻ Rebuild</button>
+    <button id="v3-fly" disabled>▶ Fly along route</button>
+    <div class="hint">Drag rotate · right-drag pan · wheel zoom · double-click a route to select · sun = Layers tab sliders</div>
+  </div>
+</section>
+<footer id="status"><span id="cursor">—</span><span id="zoomv"></span></footer>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script src="app.js"></script>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+<script type="module" src="view3d.js"></script>
+</body>
+</html>

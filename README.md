@@ -1,7 +1,7 @@
 <!-- AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author. -->
 # AutoNav-0 Lite
 
-![AutoNav-0: offline Mars route planning on NASA data](thumbnail.webp)
+![AutoNav-0: offline Mars route planning on NASA data](web/entry/thumbnail.webp)
 
 AutoNav is an extended offline-first, open-source take on [NASA Mars Trek](https://trek.nasa.gov/mars/)
 that can be deployed on low-power devices for Martian missions. The app's exclusive feature is to plan paths
@@ -67,7 +67,8 @@ AutoNav plans *strategically* from orbital data. It does not replace onboard haz
 | Terrain classes | Relief landforms (planet-wide) and DoMars16k surface landforms (41 regions); legends, cursor readout, planner costs; GeoTIFF exports |
 | Historic routes | Curiosity/Perseverance legs with sol ranges and Opportunity milestones, scored against planned routes |
 | 3D view | three.js terrain draped with the current 2D layers, routes in 3D, fly-along |
-| Offline / low power | Headless daemon, `--offline`, Unix-socket IPC, systemd unit, Docker image |
+| Offline / low power | Headless daemon, `--offline`, Unix-socket IPC, systemd units, Docker image |
+| Entry screen | Always-on `autonav_gate` (~0.6 MB) shows the entry screen and wakes the bigger app compute on **Enter**; **Exit** in the app puts it back to sleep |
 
 ```
  ┌──────────── autonav0d (C++17, headless, ~1 MB binary) ─────────────┐
@@ -87,7 +88,7 @@ AutoNav plans *strategically* from orbital data. It does not replace onboard haz
 
 ## Demo: A → B around Mount Sharp, avoiding rough ground and comm dead zones
 
-Start the service, then open
+Start the app (or press Enter on the entry screen), then open
 <http://localhost:8080/?from=-4.857,137.7022&to=-5.0883,137.6025&comm_weight=1>. The link places A and B
 in Gale crater, east of Aeolis Mons (Mount Sharp), and plans every profile. The direct line runs along the
 base of the mountain, where the mound blocks part of the sky.
@@ -101,7 +102,7 @@ base of the mountain, where the mound blocks part of the sky.
 Spending about 2 km more (12 %) keeps the rover in relay coverage for 95 % of the drive and off rough
 ground.
 
-This route and two more are **pinned in the app** (Tools → *Demo routes*, one click each) and have short
+This route and two more are **pinned in the app** (Navigation → *Demo routes*, one click each) and have short
 links:
 
 | Demo | Link | Safe rover, comm avoidance off → on |
@@ -119,15 +120,35 @@ sudo apt install build-essential cmake libcurl4-openssl-dev python3   # libcurl 
 python3 scripts/fetch_data.py          # small offline pack, only once
 cmake -S . -B build && cmake --build build -j
 ./build/autonav_tests                  # unit tests (Mars24 reference values, DEM, A*, terrain, comms)
-./build/autonav0d                      # then open http://127.0.0.1:8080
+scripts/run.sh                         # entry screen on http://127.0.0.1:8000 → Enter
 ```
 
-or simply `scripts/run.sh` (build + fetch if needed + run).
+`scripts/run.sh` builds and fetches data if needed, then starts the entry screen; **Enter** starts the map app
+on :8080 and redirects you to it, and **⏻ Exit** in the app stops it again. `scripts/run.sh --app-only`
+runs the map app alone (`./build/autonav0d`, http://127.0.0.1:8080). `HOST=0.0.0.0` serves other machines.
 
 Daemon options: `--host`, `--port`, `--unix PATH` (Unix-socket IPC), `--data DIR`, `--web DIR`,
-`--upstream URL`, `--offline` (never touch the network) and `--build-relief` (recompute the derived
-landform and comm grids). Online/offline can also be toggled at runtime with the 📡 *Uplink* button or
-`POST /api/mode?offline=1`. A hardened systemd unit is in `systemd/autonav0d.service`.
+`--upstream URL`, `--offline` (never touch the network), `--gateway-url URL` (entry screen that the Exit
+button returns to) and `--build-relief` (recompute the derived landform and comm grids). Online/offline can also be toggled at runtime with the 📡 *Uplink* button or
+`POST /api/mode?offline=1`. Hardened systemd units are in `systemd/` (`autonav_gate.service` for the
+entry screen, `autonav0d.service` for the app alone).
+
+## Entry screen: small always-on compute, big compute on demand
+
+`autonav_gate` is a tiny C++ service meant for an always-powered, low-power machine. It serves the entry
+screen (cover image and **Enter**). Enter wakes the navigation computer that runs `autonav0d`; the gate
+polls the app's `/api/health` and the browser is redirected as soon as it answers. The app's **⏻ Exit**
+button returns to the entry screen, which puts the app back to sleep; the gate itself keeps running.
+
+| Mode | Gate options | Use |
+|---|---|---|
+| Child process | `--app-cmd "exec autonav0d …"` | localhost, one box, Docker Compose (default) |
+| External compute | `--wake-cmd CMD --sleep-cmd CMD --app-url http://APP:8080 --public-app-url https://APP/` | separate machines, e.g. `gcloud compute instances start/stop`, `docker start/stop`, Wake-on-LAN |
+| Monitor only | neither | the app is managed elsewhere; the gate just shows its state and redirects |
+
+Gate API: `GET /api/status` (`asleep`, `waking`, `awake`, `sleeping` or `error`), `POST /api/wake`,
+`POST /api/sleep`, `GET /healthz`. `{host}` in URLs is replaced by the hostname the browser used, so the
+same configuration works on localhost and on a LAN.
 
 ### Offline data pack (`scripts/fetch_data.py`)
 
@@ -148,19 +169,22 @@ Anything you browse while online is cached under `data/tiles/` and then works of
 ## Docker / Compose
 
 ```bash
-scripts/stack.sh up            # map service -> http://localhost:8080 (fetches data on first run)
+scripts/stack.sh up            # entry screen -> http://localhost:8000, map app on :8080 after Enter
 scripts/stack.sh status        # containers + who owns the ports
 scripts/stack.sh down          # stop everything
 ```
 
 `stack.sh` wraps `docker compose` with a preflight: if a port is taken it names the owner instead of
-Docker's *"address already in use"* error; use `AUTONAV_PORT=8081 scripts/stack.sh up` to run side by side.
+Docker's *"address already in use"* error; use `GATE_PORT=8001 AUTONAV_PORT=8081 scripts/stack.sh up` to run side by side. In Compose the gate starts
+the app inside the same container.
 The `autonav0d` image (Ubuntu 24.04, ~100 MB, non-root, health-checked) can bake the data pack in for
 stateless deployment: `docker build --build-arg BAKE_DATA=1 -t autonav0d .`.
 
 For a cloud deployment, the service is 12-factor friendly: flags/env configuration, stateless HTTP,
-`/api/health` for readiness probes, non-root user. **Before exposing it publicly**, put authentication in
-front of it: `POST /api/mode` and `POST /api/rover/state` are unauthenticated by design for local use.
+`/api/health` for readiness probes, non-root user. Run `autonav_gate` on a small always-on instance and
+`autonav0d` on a bigger one that the gate starts and stops (external mode). **Before exposing it
+publicly**, put authentication in front of both: the gate's wake/sleep and the app's `POST /api/mode` and
+`POST /api/rover/state` are unauthenticated by design for local use.
 
 ## Comm dead spots (default-on layer)
 
@@ -173,7 +197,7 @@ start (~4 s in total) and cached in `data/terrain/comms/`.
 
 The planner uses the layer. The *safe rover* cost gains `+comm_weight × loss`, and *astronaut EVA* time is
 multiplied by `1 + 2 × comm_weight × loss`, because crews must stay in contact. Loss is 0 / 0.25 / 0.6 / 1
-for open / reduced / poor / dead. Route cards show km through dead and poor coverage, and the Tools tab has
+for open / reduced / poor / dead. Route cards show km through dead and poor coverage, and the Navigation tab has
 an *Avoid comm dead spots* setting (off / normal / strong = `comm_weight` 0 / 1 / 3).
 
 ## Terrain classes (precomputed layers)

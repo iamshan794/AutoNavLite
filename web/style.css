@@ -90,3 +90,5 @@ header button { flex:0 0 auto; }
 .warn { color: #ff6b5a; }
 .demo { display: flex; align-items: center; gap: 8px; justify-content: space-between; margin: 4px 0 8px; }
 .demo .hint { margin: 2px 0 0; }
+#exit-app { border-color:#7a3b2a; color:#ffb4a0; }
+#exit-app:hover { background:#4a2017; }

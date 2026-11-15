@@ -1,0 +1,30 @@
+# AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author.
+[Unit]
+Description=AutoNav-0 always-on entry screen (autonav_gate): wakes / sleeps the map app on demand
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/autonav0
+# One machine: the gate starts autonav0d as a child process on Enter and stops it on Exit.
+ExecStart=/opt/autonav0/bin/autonav_gate --host 0.0.0.0 --port 8000 --web /opt/autonav0/share/autonav0/web/entry \
+  --app-url http://127.0.0.1:8080 --public-app-url http://{host}:8080/ \
+  --app-cmd "exec /opt/autonav0/bin/autonav0d --host 0.0.0.0 --port 8080 --data /opt/autonav0/data --web /opt/autonav0/share/autonav0/web --gateway-url http://{host}:8000"
+# Two machines (small always-on gate + big app compute), e.g. a cloud VM that is started / stopped:
+# ExecStart=/opt/autonav0/bin/autonav_gate --host 0.0.0.0 --port 8000 --web /opt/autonav0/share/autonav0/web/entry \
+#   --app-url http://APP_INTERNAL_IP:8080 --public-app-url https://APP_PUBLIC_HOST/ --wake-timeout 300 \
+#   --wake-cmd "gcloud compute instances start autonav-app --zone ZONE" \
+#   --sleep-cmd "gcloud compute instances stop autonav-app --zone ZONE"
+Restart=always
+RestartSec=2
+DynamicUser=yes
+ReadWritePaths=/opt/autonav0/data/tiles /opt/autonav0/data/terrain
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+MemoryMax=768M
+
+[Install]
+WantedBy=multi-user.target

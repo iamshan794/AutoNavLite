@@ -18,12 +18,13 @@
   <a id="rerun-link" class="hdr-link" target="_blank" rel="noopener" hidden title="Rerun viewer: Navcam stereo, point clouds, VSLAM">Rerun ↗</a>
   <button id="btn3d" title="Toggle 3D terrain view of the current map extent">3D</button>
   <button id="netmode" title="Toggle orbiter uplink (online tile fill)">…</button>
+  <button id="exit-app" hidden title="Close the app and put the navigation computer to sleep (the entry screen stays on)">⏻ Exit</button>
 </header>
 
 <aside id="panel">
   <nav class="tabs">
     <button data-tab="layers" class="active">Layers</button>
-    <button data-tab="tools">Tools</button>
+    <button data-tab="navigation">Navigation</button>
     <button data-tab="about">About</button>
   </nav>
 
@@ -67,7 +68,7 @@
     <div id="active-list"><em>none</em></div>
   </section>
 
-  <section id="tab-tools" class="tab">
+  <section id="tab-navigation" class="tab">
     <h3>Demo routes <small>(pinned · comm + rough-terrain avoidance)</small></h3>
     <div id="demo-list"></div>
     <h3>Route planner (A*)</h3>

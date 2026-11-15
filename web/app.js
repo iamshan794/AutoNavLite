@@ -152,7 +152,7 @@ function planHistoric(id) {
   // Score what the rover actually drove next to the planned routes (not for endpoint-only routes).
   route.ref = p.kind === 'endpoints' ? null : id;
   route.refLabel = p.name;
-  document.querySelector('.tabs button[data-tab=tools]').click();
+  document.querySelector('.tabs button[data-tab=navigation]').click();
   $('#route-go').click();
 }
 
@@ -365,6 +365,14 @@ function health() {
     b.className = h.online ? 'on' : 'off';
     b.dataset.online = h.online ? '1' : '0';
     const rl = $('#rerun-link');
+    if (h.gateway_url) {
+      const gw = h.gateway_url.replaceAll('{host}', location.hostname).replace(/\/$/, '');
+      $('#exit-app').hidden = false;
+      $('#exit-app').onclick = () => {
+        if (confirm('Exit AutoNav-0? The navigation computer goes to sleep; the entry screen stays on.'))
+          location.href = gw + '/?exit=1';
+      };
+    }
     if (h.rerun_url) { rl.href = h.rerun_url.replaceAll('{host}', location.hostname); rl.hidden = false; } else rl.hidden = true;
     $('#health').innerHTML = `<h3>Service</h3><code>autonav0d ${esc(h.version)}</code> · up ${h.uptime_s}s<br>
       tiles: ${h.tiles.hits} cached, ${h.tiles.fetched} fetched, ${h.tiles.misses} misses<br>
@@ -631,7 +639,7 @@ function planBetween(a, b, commWeight) {
   setPoint('start', L.latLng(a[0], a[1]));
   setPoint('goal', L.latLng(b[0], b[1]));
   map.fitBounds(L.latLngBounds([a, b]).pad(0.3));
-  document.querySelector('.tabs button[data-tab=tools]').click();
+  document.querySelector('.tabs button[data-tab=navigation]').click();
   $('#route-go').click();
 }
 $('#demo-list').innerHTML = DEMOS.map((d) => `<div class="demo">

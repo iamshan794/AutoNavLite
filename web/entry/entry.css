@@ -1,0 +1,25 @@
+/* AI-assisted: written with the help of an AI coding assistant (GitHub Copilot); reviewed by the AutoNav-0 author. */
+:root { --bg:#120d0b; --fg:#f1e6dc; --acc:#e8743b; --muted:#b39c8c; }
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+  font:15px/1.45 system-ui, -apple-system, "Segoe UI", Ubuntu, sans-serif; }
+.entry { position:relative; height:100%; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; }
+.cover { position:absolute; inset:0; background:url(thumbnail.webp) center/cover no-repeat; }
+.cover::after { content:""; position:absolute; inset:0;
+  background:linear-gradient(to bottom, rgba(18,13,11,.05) 35%, rgba(18,13,11,.9) 85%); }
+.panel { position:relative; text-align:center; margin-bottom:9vh; padding:0 20px; max-width:640px; }
+h1 { margin:0; font-size:44px; letter-spacing:1px; text-shadow:0 2px 14px rgba(0,0,0,.8); }
+h1 span { color:var(--acc); font-weight:400; }
+.tag { color:#e6d6c8; margin:8px 0 22px; text-shadow:0 1px 8px rgba(0,0,0,.9); }
+#enter { font-size:18px; padding:12px 54px; border-radius:28px; border:0; cursor:pointer; color:#1a0f09;
+  background:var(--acc); box-shadow:0 6px 24px rgba(232,116,59,.35); transition:transform .15s, opacity .15s; }
+#enter:hover:not(:disabled) { transform:translateY(-1px); }
+#enter:disabled { opacity:.55; cursor:default; }
+.status { margin-top:16px; color:var(--muted); font-size:13px; display:flex; gap:8px; justify-content:center; align-items:center; }
+.dot { width:9px; height:9px; border-radius:50%; background:#777; display:inline-block; }
+.status.awake .dot { background:#6fd36f; }
+.status.asleep .dot { background:#8a7a70; }
+.status.busy .dot { background:var(--acc); animation:pulse 1s infinite; }
+.status.error { color:#ff8a7a; } .status.error .dot { background:#ff5a4a; }
+@keyframes pulse { 50% { opacity:.25; } }
+footer { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:11px; color:#7d6a5e; }

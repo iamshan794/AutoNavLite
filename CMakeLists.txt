@@ -32,6 +32,12 @@ endif()
 add_executable(autonav0d src/main.cpp)
 target_link_libraries(autonav0d PRIVATE autonav_core)
 
+# Always-on entry screen that wakes / sleeps autonav0d (tiny: HTTP + process control only).
+add_executable(autonav_gate src/gate.cpp)
+target_include_directories(autonav_gate PRIVATE third_party)
+target_compile_options(autonav_gate PRIVATE -Wall -Wextra)
+target_link_libraries(autonav_gate PRIVATE Threads::Threads)
+
 if(AUTONAV_BUILD_TESTS)
   enable_testing()
   add_executable(autonav_tests tests/test_core.cpp)

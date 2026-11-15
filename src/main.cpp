@@ -51,6 +51,7 @@ struct Config {
   bool offline = false;
   bool build_relief = false;
   std::string rerun_url;  // advertised to the UI (Rerun web viewer for point clouds / VSLAM)
+  std::string gateway_url;  // entry screen (autonav_gate); enables the UI's Exit button
 };
 
 void log(const std::string& msg) {
@@ -70,6 +71,7 @@ void usage() {
             << "  --upstream URL   WMTS upstream (default NASA Trek Mars EQ)\n"
             << "  --offline        never contact the network (cache only)\n"
             << "  --rerun-url URL  Rerun web viewer URL to advertise in the UI (optional)\n"
+            << "  --gateway-url URL entry screen (autonav_gate) that Exit returns to; {host} = page host\n"
             << "  --build-relief   recompute the DEM-derived grids (landforms in data/terrain/relief,\n"
             << "                   comm coverage in data/terrain/comms) and exit\n";
 }
@@ -199,6 +201,7 @@ int main(int argc, char** argv) {
     else if (a == "--upstream") cfg.upstream = next();
     else if (a == "--offline") cfg.offline = true;
     else if (a == "--rerun-url") cfg.rerun_url = next();
+    else if (a == "--gateway-url") cfg.gateway_url = next();
     else if (a == "--build-relief") cfg.build_relief = true;
     else if (a == "-h" || a == "--help") { usage(); return 0; }
     else if (a == "--version") { std::cout << kVersion << "\n"; return 0; }
@@ -318,7 +321,8 @@ int main(int argc, char** argv) {
                     {"dems", dems}, {"thermal_inertia", ti_ptr != nullptr},
                     {"terrain_classes", {{"relief", landform.grids().size()}, {"terrain", nter}}},
                     {"comm_coverage", comms.grids().size()},
-                    {"nomenclature", nomenclature.size()}, {"rerun_url", cfg.rerun_url}});
+                    {"nomenclature", nomenclature.size()}, {"rerun_url", cfg.rerun_url},
+                    {"gateway_url", cfg.gateway_url}});
   });
 
   svr.Post("/api/mode", [&](const httplib::Request& req, httplib::Response& res) {

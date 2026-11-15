@@ -3,12 +3,13 @@
 #   docker compose --profile setup run --rm fetch-data   # once: small offline data pack -> ./data
 #   docker compose --profile terrain run --rm terrain-map # optional: regenerate terrain-class layers
 #                                                         # (GPU recommended; results ship in data/terrain)
-#   docker compose up -d                                 # 2D/3D map service only  -> http://localhost:8080
+#   docker compose up -d                                 # entry screen -> http://localhost:8000
+#                                                         # (Enter wakes the map app on :8080, Exit sleeps it)
 #   docker compose --profile rover up -d                 # + ROS 2 rover replay, RTAB-Map VSLAM
 # Rerun (3D debug viewer) is a dev-only feature and is NOT started by default:
 #   AUTONAV_RERUN=true AUTONAV_RERUN_URL='http://{host}:9090/?url=rerun%2Bhttp%3A%2F%2F{host}%3A9876%2Fproxy' \
 #     docker compose --profile rover --profile rerun up -d   (or: scripts/stack.sh up --rover --rerun)
-# Ports/user are overridable: AUTONAV_PORT, RERUN_WEB_PORT, RERUN_GRPC_PORT, UID, GID, M20_SOLS.
+# Ports/user are overridable: GATE_PORT, AUTONAV_PORT, RERUN_WEB_PORT, RERUN_GRPC_PORT, UID, GID, M20_SOLS.
 # GPU: scripts/stack.sh adds compose.gpu.yaml automatically when an NVIDIA GPU is usable; without it the
 # rover's perception falls back to CPU backends (SGBM, XFeat/ORB on CPU, LK flow).
 name: autonav0
@@ -16,15 +17,25 @@ name: autonav0
 x-user: &user "${UID:-1000}:${GID:-1000}"
 
 services:
+  # Always-on entry screen (autonav_gate, :8000) that starts / stops the map app (autonav0d, :8080) inside
+  # this container on Enter / Exit. On separate machines run autonav_gate with --wake-cmd/--sleep-cmd.
   autonav0d:
     build: { context: ., target: runtime }
     image: autonav0d:latest
     user: *user
-    ports: ["${AUTONAV_PORT:-8080}:8080"]
+    ports: ["${GATE_PORT:-8000}:8000", "${AUTONAV_PORT:-8080}:8080"]
     # ./web is mounted read-only so UI edits apply without rebuilding (the image also contains it).
     volumes: ["./data:/data", "./web:/opt/autonav0/web:ro"]
-    # Rerun link in the UI only when a viewer URL is given ({host} = the page's hostname).
-    command: ["--rerun-url", "${AUTONAV_RERUN_URL:-}"]
+    # {host} = the page's hostname. The Rerun link appears only when AUTONAV_RERUN_URL is set.
+    entrypoint: ["autonav_gate", "--host", "0.0.0.0", "--port", "8000", "--web", "/opt/autonav0/web/entry",
+                 "--app-url", "http://127.0.0.1:8080",
+                 "--public-app-url", "http://{host}:${AUTONAV_PORT:-8080}/",
+                 "--app-cmd", "exec autonav0d --host 0.0.0.0 --port 8080 --data /data --web /opt/autonav0/web --gateway-url http://{host}:${GATE_PORT:-8000} --rerun-url '${AUTONAV_RERUN_URL:-}'"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped
 
   fetch-data:

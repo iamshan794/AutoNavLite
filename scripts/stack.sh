@@ -10,8 +10,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export UID GID="${GID:-$(id -g)}"
-AUTONAV_PORT="${AUTONAV_PORT:-8080}" RERUN_WEB_PORT="${RERUN_WEB_PORT:-9090}" RERUN_GRPC_PORT="${RERUN_GRPC_PORT:-9876}"
-export AUTONAV_PORT RERUN_WEB_PORT RERUN_GRPC_PORT
+GATE_PORT="${GATE_PORT:-8000}" AUTONAV_PORT="${AUTONAV_PORT:-8080}" RERUN_WEB_PORT="${RERUN_WEB_PORT:-9090}" RERUN_GRPC_PORT="${RERUN_GRPC_PORT:-9876}"
+export GATE_PORT AUTONAV_PORT RERUN_WEB_PORT RERUN_GRPC_PORT
 
 # Port owned by something other than this compose project? Print the owner and fail.
 check_port() {
@@ -62,6 +62,7 @@ fi
 case "$cmd" in
   up)
     ok=1
+    check_port "$GATE_PORT" "entry screen" GATE_PORT || ok=0
     check_port "$AUTONAV_PORT" "map service" AUTONAV_PORT || ok=0
     if [[ -n "$RERUN" ]]; then
       check_port "$RERUN_WEB_PORT" "Rerun web viewer" RERUN_WEB_PORT || ok=0
@@ -76,7 +77,7 @@ case "$cmd" in
     fi
     docker compose "${FILES[@]}" "${PROFILES[@]}" up -d --build
     echo
-    echo "✓ map:   http://localhost:$AUTONAV_PORT"
+    echo "✓ entry: http://localhost:$GATE_PORT   (Enter wakes the map app on :$AUTONAV_PORT, Exit sleeps it)"
     [[ -n "$ROVER" ]] && echo "✓ rover: live position on the map (ROS 2 + RTAB-Map)"
     [[ -n "$RERUN" ]] && echo "✓ rerun (dev): http://localhost:$RERUN_WEB_PORT/?url=rerun%2Bhttp%3A%2F%2Flocalhost%3A$RERUN_GRPC_PORT%2Fproxy"
     ;;
@@ -85,7 +86,7 @@ case "$cmd" in
     ;;
   status)
     docker compose --profile rover --profile rerun ps
-    for p in "$AUTONAV_PORT" "$RERUN_WEB_PORT" "$RERUN_GRPC_PORT"; do
+    for p in "$GATE_PORT" "$AUTONAV_PORT" "$RERUN_WEB_PORT" "$RERUN_GRPC_PORT"; do
       ss -Hltnp "sport = :$p" 2>/dev/null | sed "s/^/port $p: /" | head -1 || true
     done
     ;;

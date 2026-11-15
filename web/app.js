@@ -615,18 +615,40 @@ $('#ov-rover').onchange = () => { clearTimeout(rover.timer); pollRover(); };
 window.autonav = { rover, map, routesState, selectRoute, sun, getBasemap: () => basemap, getOverlays: () => [...active.values()].map((a) => a.layer),
   getDemOverlays: () => Object.values(demOv).filter(Boolean), LAYERS: () => LAYERS };
 
-// Deep link: ?from=lat,lon&to=lat,lon[&comm_weight=0|1|3] places A/B and plans (shareable demo routes).
+// Pinned demo routes: A -> B pairs where comm-aware planning avoids dead zones and rough ground
+// (numbers: Safe rover, comm avoidance off -> normal, MOLA 463 m grids).
+const DEMOS = [
+  { id: 'gale-sharp', name: 'Gale · around Mount Sharp', from: [-4.857, 137.7022], to: [-5.0883, 137.6025],
+    note: 'Curiosity site. Poor comms 5.5 → 1.0 km, rough 2.9 → 0 km, +2 km.' },
+  { id: 'gusev-rim', name: 'Gusev · south-east rim', from: [-15.0259, 176.7899], to: [-15.1381, 176.6398],
+    note: 'Spirit site. Dead zone 1.3 → 0 km, poor 3.5 → 0 km, rough 3.4 → 1.1 km, +1.6 km.' },
+  { id: 'jezero-rim', name: 'Jezero · southern rim crossing', from: [18.2802, 77.3913], to: [18.1495, 77.3196],
+    note: 'Perseverance site. Poor comms 2.7 → 0 km, rough 1.5 → 1.2 km, +1.2 km.' },
+];
+function planBetween(a, b, commWeight) {
+  if (commWeight != null) $('#comm-weight').value = String(commWeight);
+  if (!$('#ov-comms').checked) { $('#ov-comms').checked = true; refreshDem('comms'); syncLegends(); }
+  setPoint('start', L.latLng(a[0], a[1]));
+  setPoint('goal', L.latLng(b[0], b[1]));
+  map.fitBounds(L.latLngBounds([a, b]).pad(0.3));
+  document.querySelector('.tabs button[data-tab=tools]').click();
+  $('#route-go').click();
+}
+$('#demo-list').innerHTML = DEMOS.map((d) => `<div class="demo">
+  <div><b>${esc(d.name)}</b><div class="hint">${esc(d.note)}</div></div>
+  <button data-demo="${d.id}">Plan</button></div>`).join('');
+$('#demo-list').onclick = (e) => {
+  const d = DEMOS.find((x) => x.id === e.target.dataset.demo);
+  if (d) planBetween(d.from, d.to, 1);
+};
+
+// Deep links: ?demo=<id> or ?from=lat,lon&to=lat,lon[&comm_weight=0|1|3] place A/B and plan.
 {
   const qs = new URLSearchParams(location.search);
   const ll = (s) => (s || '').split(',').map(Number);
-  const [a, b] = [ll(qs.get('from')), ll(qs.get('to'))];
-  if (a.length === 2 && b.length === 2 && [...a, ...b].every(Number.isFinite)) {
-    if (qs.has('comm_weight')) $('#comm-weight').value = qs.get('comm_weight');
-    setPoint('start', L.latLng(a[0], a[1]));
-    setPoint('goal', L.latLng(b[0], b[1]));
-    map.fitBounds(L.latLngBounds([a, b]).pad(0.3));
-    document.querySelector('.tabs button[data-tab=tools]').click();
-    $('#route-go').click();
-  }
+  const demo = DEMOS.find((x) => x.id === qs.get('demo'));
+  const [a, b] = demo ? [demo.from, demo.to] : [ll(qs.get('from')), ll(qs.get('to'))];
+  if (a.length === 2 && b.length === 2 && [...a, ...b].every(Number.isFinite))
+    planBetween(a, b, qs.has('comm_weight') ? qs.get('comm_weight') : (demo ? 1 : null));
 }
 })();

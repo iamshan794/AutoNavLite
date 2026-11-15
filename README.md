@@ -99,7 +99,18 @@ base of the mountain, where the mound blocks part of the sky.
 | Astronaut EVA, off → on | 16.2 → 18.1 km | 11.1 → 0.6 km | 2.2 → 1.9 km | 18.2 → 15.3° |
 
 Spending about 2 km more (12 %) keeps the rover in relay coverage for 95 % of the drive and off rough
-ground. Any route can be shared the same way: `?from=lat,lon&to=lat,lon[&comm_weight=0|1|3]`.
+ground.
+
+This route and two more are **pinned in the app** (Tools → *Demo routes*, one click each) and have short
+links:
+
+| Demo | Link | Safe rover, comm avoidance off → on |
+|---|---|---|
+| Gale · around Mount Sharp (Curiosity) | `/?demo=gale-sharp` | poor comms 5.5 → 1.0 km, rough 2.9 → 0 km, +2.0 km |
+| Gusev · south-east rim (Spirit) | `/?demo=gusev-rim` | dead zone 1.3 → 0 km, poor 3.5 → 0 km, rough 3.4 → 1.1 km, +1.6 km |
+| Jezero · southern rim crossing (Perseverance) | `/?demo=jezero-rim` | poor comms 2.7 → 0 km, rough 1.5 → 1.2 km, +1.2 km |
+
+Any route can be shared the same way: `?from=lat,lon&to=lat,lon[&comm_weight=0|1|3]`.
 
 ## Quick start (Ubuntu)
 

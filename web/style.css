@@ -92,3 +92,8 @@ header button { flex:0 0 auto; }
 .demo .hint { margin: 2px 0 0; }
 #exit-app { border-color:#7a3b2a; color:#ffb4a0; }
 #exit-app:hover { background:#4a2017; }
+h3.sec { cursor:pointer; user-select:none; display:flex; align-items:baseline; gap:6px; }
+h3.sec::before { content:'▾'; font-size:11px; transition:transform .15s; }
+h3.sec.folded::before { transform:rotate(-90deg); }
+h3.sec:hover { filter:brightness(1.2); }
+.sec-body[hidden] { display:none; }

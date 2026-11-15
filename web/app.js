@@ -659,4 +659,26 @@ $('#demo-list').onclick = (e) => {
   if (a.length === 2 && b.length === 2 && [...a, ...b].every(Number.isFinite))
     planBetween(a, b, qs.has('comm_weight') ? qs.get('comm_weight') : (demo ? 1 : null));
 }
+// Collapsible sections in the Layers tab: click a heading to fold it; state is remembered per browser.
+{
+  const saved = JSON.parse(localStorage.getItem('autonav.folded') || '{}');
+  document.querySelectorAll('#tab-layers > h3').forEach((h) => {
+    const body = document.createElement('div');
+    body.className = 'sec-body';
+    while (h.nextSibling && !(h.nextSibling.nodeType === 1 && h.nextSibling.tagName === 'H3')) body.appendChild(h.nextSibling);
+    h.after(body);
+    const key = h.firstChild.textContent.trim();
+    h.classList.add('sec');
+    h.tabIndex = 0;
+    const set = (folded) => { h.classList.toggle('folded', folded); body.hidden = folded; h.setAttribute('aria-expanded', String(!folded)); };
+    set(!!saved[key]);
+    const toggle = () => {
+      set(!h.classList.contains('folded'));
+      saved[key] = h.classList.contains('folded');
+      localStorage.setItem('autonav.folded', JSON.stringify(saved));
+    };
+    h.onclick = toggle;
+    h.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } };
+  });
+}
 })();

@@ -5,7 +5,7 @@
 
 FROM ubuntu:24.04 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      build-essential cmake libcurl4-openssl-dev ca-certificates \
+      build-essential cmake libcurl4-openssl-dev ca-certificates libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /src
 COPY CMakeLists.txt ./
